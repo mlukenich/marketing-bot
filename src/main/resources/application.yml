@@ -1,0 +1,30 @@
+# Spring Boot Server Configuration
+server:
+  port: 8085
+
+# Database Configuration (H2 In-Memory)
+spring:
+  datasource:
+    url: jdbc:h2:mem:affiliateDB
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update # Automatically updates the DB schema
+
+# External API Keys (Keep these secure!)
+api-keys:
+  openai: YOUR_OPENAI_API_KEY
+  bitly: YOUR_BITLY_ACCESS_TOKEN
+  twitter:
+    api-key: YOUR_TWITTER_API_KEY
+    api-key-secret: YOUR_TWITTER_API_KEY_SECRET
+    access-token: YOUR_TWITTER_ACCESS_TOKEN
+    access-token-secret: YOUR_TWITTER_ACCESS_TOKEN_SECRET
+
+# Application Settings
+agent:
+  scheduling:
+    cron: "0 0 */4 * * *" # Run every 4 hours
