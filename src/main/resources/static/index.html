@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Affiliate Agent UI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #2a2a2a;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #bbbbbb;
+            font-size: 0.9em;
+        }
+        input[type="url"],
+        select,
+        input[type="datetime-local"] {
+            width: calc(100% - 20px);
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background-color: #3a3a3a;
+            color: #e0e0e0;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        input[type="url"]:focus,
+        select:focus,
+        input[type="datetime-local"]:focus {
+            border-color: #4CAF50;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .result-section {
+            background-color: #2a2a2a;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 600px;
+            margin-top: 20px;
+        }
+        .result-section h2 {
+            color: #4CAF50;
+            margin-top: 0;
+            font-weight: 300;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .result-item {
+            margin-bottom: 15px;
+            word-wrap: break-word;
+        }
+        .result-item strong {
+            color: #bbbbbb;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .result-item a {
+            color: #66bb6a;
+            text-decoration: none;
+        }
+        .result-item a:hover {
+            text-decoration: underline;
+        }
+        .error-message {
+            color: #ff6b6b;
+            background-color: #3a1a1a;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            border: 1px solid #ff6b6b;
+            display: none; /* Hidden by default */
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none; /* Hidden by default */
+            margin: 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Affiliate Agent</h1>
+        <form id="createLinkForm">
+            <label for="longUrl">Product URL:</label>
+            <input type="url" id="longUrl" placeholder="e.g., https://www.amazon.com/product-xyz" required>
+
+            <label for="contentType">Content Type:</label>
+            <select id="contentType">
+                <option value="TWEET">Tweet</option>
+                <option value="BLOG_POST">Blog Post</option>
+            </select>
+
+            <label for="scheduledAt">Schedule Post (Optional):</label>
+            <input type="datetime-local" id="scheduledAt">
+
+            <button type="submit">Create & Schedule Link</button>
+            <div class="loading-spinner" id="loadingSpinner"></div>
+            <div class="error-message" id="errorMessage"></div>
+        </form>
+    </div>
+
+    <div class="result-section" id="resultSection" style="display: none;">
+        <h2>Result</h2>
+        <div class="result-item">
+            <strong>ID:</strong> <span id="resultId"></span>
+        </div>
+        <div class="result-item">
+            <strong>Title:</strong> <span id="resultTitle"></span>
+        </div>
+        <div class="result-item">
+            <strong>Long URL:</strong> <a id="resultLongUrl" href="#" target="_blank"></a>
+        </div>
+        <div class="result-item">
+            <strong>Short URL:</strong> <a id="resultShortUrl" href="#" target="_blank"></a>
+        </div>
+        <div class="result-item">
+            <strong>Generated Content:</strong> <pre id="resultGeneratedContent"></pre>
+        </div>
+        <div class="result-item">
+            <strong>Created At:</strong> <span id="resultCreatedAt"></span>
+        </div>
+        <div class="result-item">
+            <strong>Scheduled At:</strong> <span id="resultScheduledAt"></span>
+        </div>
+        <div class="result-item">
+            <strong>Posted:</strong> <span id="resultPosted"></span>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('createLinkForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const longUrl = document.getElementById('longUrl').value;
+            const contentType = document.getElementById('contentType').value;
+            const scheduledAtInput = document.getElementById('scheduledAt').value;
+
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const errorMessage = document.getElementById('errorMessage');
+            const resultSection = document.getElementById('resultSection');
+
+            // Reset UI
+            errorMessage.style.display = 'none';
+            resultSection.style.display = 'none';
+            loadingSpinner.style.display = 'block';
+
+            const requestBody = {
+                longUrl: longUrl,
+                contentType: contentType
+            };
+
+            if (scheduledAtInput) {
+                // Convert local datetime string to ISO 8601 for backend
+                requestBody.scheduledAt = new Date(scheduledAtInput).toISOString().slice(0, -1); // Remove 'Z' for local time
+            }
+
+            try {
+                const response = await fetch('/api/v1/links', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to create link');
+                }
+
+                const data = await response.json();
+
+                document.getElementById('resultId').textContent = data.id;
+                document.getElementById('resultTitle').textContent = data.title;
+                document.getElementById('resultLongUrl').textContent = data.longUrl;
+                document.getElementById('resultLongUrl').href = data.longUrl;
+                document.getElementById('resultShortUrl').textContent = data.shortUrl;
+                document.getElementById('resultShortUrl').href = data.shortUrl;
+                document.getElementById('resultGeneratedContent').textContent = data.generatedContent;
+                document.getElementById('resultCreatedAt').textContent = new Date(data.createdAt).toLocaleString();
+                document.getElementById('resultScheduledAt').textContent = data.scheduledAt ? new Date(data.scheduledAt).toLocaleString() : 'Not Scheduled';
+                document.getElementById('resultPosted').textContent = data.posted ? 'Yes' : 'No';
+
+                resultSection.style.display = 'block';
+
+            } catch (error) {
+                errorMessage.textContent = 'Error: ' + error.message;
+                errorMessage.style.display = 'block';
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
