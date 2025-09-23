@@ -2,6 +2,7 @@ package com.marketer.affiliate_agent.service;
 
 import com.marketer.affiliate_agent.entity.AffiliateLink;
 import com.marketer.affiliate_agent.repository.AffiliateLinkRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -12,25 +13,38 @@ import java.util.List;
 public class PostingScheduler {
 
     private final AffiliateLinkRepository affiliateLinkRepository;
-    private final TwitterService twitterService;
+    private final List<SocialMediaService> socialMediaServices;
 
-    public PostingScheduler(AffiliateLinkRepository affiliateLinkRepository, TwitterService twitterService) {
+    @Value("${application.base-url}")
+    private String baseUrl;
+
+    public PostingScheduler(AffiliateLinkRepository affiliateLinkRepository, List<SocialMediaService> socialMediaServices) {
         this.affiliateLinkRepository = affiliateLinkRepository;
-        this.twitterService = twitterService;
+        this.socialMediaServices = socialMediaServices;
     }
 
     @Scheduled(fixedRate = 60000) // Run every 60 seconds
-    public void postScheduledTweets() {
+    public void postScheduledContent() {
         List<AffiliateLink> linksToPost = affiliateLinkRepository.findByScheduledAtBeforeAndPostedFalse(
                 LocalDateTime.now());
 
         for (AffiliateLink link : linksToPost) {
-            // Only post if the content type is TWEET
-            // For other content types, we would need different posting mechanisms
-            // For now, we assume only tweets are posted by this scheduler
-            String tweetContent = link.getGeneratedContent() + "\n" + link.getShortUrl();
-            twitterService.createTweet(tweetContent);
+            String trackableUrl = baseUrl + "/track/" + link.getId();
+            String message = link.getGeneratedContent() + "\n" + trackableUrl;
 
+            System.out.println("Broadcasting post for link ID: " + link.getId());
+
+            // Broadcast the message to all social media services
+            for (SocialMediaService service : socialMediaServices) {
+                try {
+                    service.post(message);
+                } catch (Exception e) {
+                    // Log the error for a specific service but continue with others
+                    System.err.println("Failed to post to " + service.getClass().getSimpleName() + ": " + e.getMessage());
+                }
+            }
+
+            // Mark the link as posted after attempting to broadcast to all services
             link.setPosted(true);
             affiliateLinkRepository.save(link);
         }

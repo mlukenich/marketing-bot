@@ -1,5 +1,6 @@
 package com.marketer.affiliate_agent.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,6 +24,15 @@ public class AffiliateLink {
 
     private String shortUrl;
 
+    @Column(length = 1024)
+    private String generatedContent;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    private LocalDateTime scheduledAt;
+
+    private boolean posted = false;
+
+    private long clickCount = 0; // New field for click tracking
 }

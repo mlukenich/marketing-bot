@@ -13,11 +13,13 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ResearchService {
 
     private final ResearchResultRepository researchResultRepository;
+    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36";
 
     public ResearchService(ResearchResultRepository researchResultRepository) {
         this.researchResultRepository = researchResultRepository;
@@ -26,66 +28,37 @@ public class ResearchService {
     public List<ScrapedProductOffer> researchTrendingProducts(String trendingPageUrl) {
         List<ScrapedProductOffer> offers = new ArrayList<>();
         try {
-            Document doc = Jsoup.connect(trendingPageUrl).get();
+            Document doc = Jsoup.connect(trendingPageUrl).userAgent(USER_AGENT).get();
 
-            // Generic attempt to find product listings
-            // This part would need to be highly customized for a real e-commerce site
-            Elements productElements = doc.select("div.product-item, li.product, article.product");
-
-            if (productElements.isEmpty()) {
-                // Fallback: try to find common elements if specific classes aren't found
-                productElements = doc.select("h2:has(a), h3:has(a)");
-            }
+            Elements productElements = doc.select("div.a-cardui.fluid-quad-card.fluid-card");
 
             for (Element element : productElements) {
                 ScrapedProductOffer offer = new ScrapedProductOffer();
 
-                // Try to find product name
-                Element nameElement = element.selectFirst("h2 a, h3 a, .product-title a");
-                if (nameElement != null) {
-                    offer.setName(nameElement.text());
-                    offer.setUrl(nameElement.attr("abs:href"));
-                } else {
-                    // If no specific name element, try to get from the main element's text or first link
-                    Element linkElement = element.selectFirst("a");
-                    if (linkElement != null && !linkElement.text().isEmpty()) {
-                        offer.setName(linkElement.text());
-                        offer.setUrl(linkElement.attr("abs:href"));
-                    } else {
-                        offer.setName(element.text().substring(0, Math.min(element.text().length(), 50))); // Take first 50 chars
-                        offer.setUrl(trendingPageUrl); // Fallback to the page URL
+                Element linkElement = element.selectFirst("a.a-link-normal");
+                if (linkElement != null) {
+                    String productUrl = linkElement.attr("abs:href");
+                    offer.setUrl(productUrl);
+
+                    Element imgElement = linkElement.selectFirst("img");
+                    if (imgElement != null) {
+                        offer.setName(imgElement.attr("alt"));
+                        offer.setImageUrl(imgElement.attr("src"));
                     }
-                }
 
-                // Try to find description (e.g., from a paragraph or meta description if available)
-                Element descElement = element.selectFirst("p.product-description, .product-excerpt");
-                if (descElement != null) {
-                    offer.setDescription(descElement.text());
-                } else {
-                    // Fallback to meta description if available, or empty
-                    Element metaDescription = doc.select("meta[name=description]").first();
-                    if (metaDescription != null) {
-                        offer.setDescription(metaDescription.attr("content"));
-                    } else {
-                        offer.setDescription("");
+                    if (offer.getName() != null && !offer.getName().isEmpty() && researchResultRepository.findByProductUrl(productUrl).isEmpty()) {
+                        // Perform deep-dive scrape for detailed description
+                        String detailedDescription = scrapeProductDetails(productUrl);
+                        offer.setDescription(detailedDescription);
+
+                        offers.add(offer);
+                        ResearchResult result = new ResearchResult();
+                        result.setProductName(offer.getName());
+                        result.setProductUrl(offer.getUrl());
+                        result.setProductDescription(offer.getDescription());
+                        result.setProductImageUrl(offer.getImageUrl());
+                        researchResultRepository.save(result);
                     }
-                }
-
-                // Try to find image URL
-                Element imgElement = element.selectFirst("img.product-image, .product-thumbnail img");
-                if (imgElement != null) {
-                    offer.setImageUrl(imgElement.attr("abs:src"));
-                }
-
-                if (offer.getName() != null && !offer.getName().isEmpty() && offer.getUrl() != null && !offer.getUrl().isEmpty()) {
-                    offers.add(offer);
-                    // Save to database immediately after discovery
-                    ResearchResult result = new ResearchResult();
-                    result.setProductName(offer.getName());
-                    result.setProductUrl(offer.getUrl());
-                    result.setProductDescription(offer.getDescription());
-                    result.setProductImageUrl(offer.getImageUrl());
-                    researchResultRepository.save(result);
                 }
             }
 
@@ -93,5 +66,21 @@ public class ResearchService {
             throw new ScrapingException("Failed to research trending products from URL: " + trendingPageUrl, e);
         }
         return offers;
+    }
+
+    private String scrapeProductDetails(String productUrl) {
+        try {
+            Document productDoc = Jsoup.connect(productUrl).userAgent(USER_AGENT).get();
+            // Specific selector for Amazon's "About this item" bullet points
+            Elements featureBullets = productDoc.select("#feature-bullets .a-list-item");
+            if (!featureBullets.isEmpty()) {
+                return featureBullets.stream()
+                        .map(Element::text)
+                        .collect(Collectors.joining(". "));
+            }
+        } catch (IOException e) {
+            System.err.println("Failed to scrape details for " + productUrl + ": " + e.getMessage());
+        }
+        return ""; // Return empty string if details can't be found
     }
 }

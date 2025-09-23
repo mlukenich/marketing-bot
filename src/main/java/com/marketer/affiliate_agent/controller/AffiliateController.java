@@ -1,23 +1,47 @@
 package com.marketer.affiliate_agent.controller;
 
-import com.marketer.affiliate_agent.service.BitlyService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.marketer.affiliate_agent.dto.CreateLinkRequest;
+import com.marketer.affiliate_agent.dto.LinkResponse;
+import com.marketer.affiliate_agent.entity.AffiliateLink;
+import com.marketer.affiliate_agent.service.AffiliateLinkService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/links")
 public class AffiliateController {
 
-    private final BitlyService bitlyService;
+    private final AffiliateLinkService affiliateLinkService;
 
-    public AffiliateController(BitlyService bitlyService) {
-        this.bitlyService = bitlyService;
+    public AffiliateController(AffiliateLinkService affiliateLinkService) {
+        this.affiliateLinkService = affiliateLinkService;
     }
 
-    @PostMapping("/shorten")
-    public String shortenUrl(@RequestBody String longUrl) {
-        return bitlyService.shortenUrl(longUrl);
+    @PostMapping
+    public LinkResponse createLink(@RequestBody CreateLinkRequest request) {
+        AffiliateLink newLink = affiliateLinkService.createLink(request.getLongUrl(), request.getContentType(), request.getScheduledAt());
+        return LinkResponse.from(newLink);
+    }
+
+    @GetMapping
+    public List<LinkResponse> getAllLinks() {
+        return affiliateLinkService.getAllLinks().stream()
+                .map(LinkResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/{id}")
+    public LinkResponse getLinkById(@PathVariable Long id) {
+        return LinkResponse.from(affiliateLinkService.getLinkById(id));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteLink(@PathVariable Long id) {
+        affiliateLinkService.deleteLink(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

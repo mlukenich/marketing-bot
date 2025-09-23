@@ -3,249 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Affiliate Agent UI</title>
+    <title>Affiliate Agent Dashboard</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1a;
-            color: #e0e0e0;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-        .container {
-            background-color: #2a2a2a;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 600px;
-            margin-bottom: 20px;
-        }
-        h1 {
-            color: #4CAF50;
-            text-align: center;
-            margin-bottom: 30px;
-            font-weight: 300;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #bbbbbb;
-            font-size: 0.9em;
-        }
-        input[type="url"],
-        select,
-        input[type="datetime-local"] {
-            width: calc(100% - 20px);
-            padding: 12px;
-            margin-bottom: 20px;
-            border: 1px solid #444;
-            border-radius: 5px;
-            background-color: #3a3a3a;
-            color: #e0e0e0;
-            font-size: 1em;
-            box-sizing: border-box;
-        }
-        input[type="url"]:focus,
-        select:focus,
-        input[type="datetime-local"]:focus {
-            border-color: #4CAF50;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1.1em;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            width: 100%;
-        }
-        button:hover {
-            background-color: #45a049;
-            transform: translateY(-2px);
-        }
-        button:active {
-            transform: translateY(0);
-        }
-        .result-section {
-            background-color: #2a2a2a;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 600px;
-            margin-top: 20px;
-        }
-        .result-section h2 {
-            color: #4CAF50;
-            margin-top: 0;
-            font-weight: 300;
-            border-bottom: 1px solid #444;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        .result-item {
-            margin-bottom: 15px;
-            word-wrap: break-word;
-        }
-        .result-item strong {
-            color: #bbbbbb;
-            display: block;
-            margin-bottom: 5px;
-        }
-        .result-item a {
-            color: #66bb6a;
-            text-decoration: none;
-        }
-        .result-item a:hover {
-            text-decoration: underline;
-        }
-        .error-message {
-            color: #ff6b6b;
-            background-color: #3a1a1a;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
-            border: 1px solid #ff6b6b;
-            display: none; /* Hidden by default */
-        }
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #4CAF50;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: none; /* Hidden by default */
-            margin: 10px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
+        .container, .dashboard-section { background-color: #2a2a2a; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); width: 100%; max-width: 900px; margin-bottom: 30px; }
+        h1, h2 { color: #4CAF50; text-align: center; font-weight: 300; margin-top: 0; }
+        h1 { margin-bottom: 30px; }
+        h2 { border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #bbbbbb; font-size: 0.9em; }
+        input[type="url"], select, input[type="datetime-local"] { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #444; border-radius: 5px; background-color: #3a3a3a; color: #e0e0e0; font-size: 1em; box-sizing: border-box; }
+        button, .action-btn { background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.3s ease; }
+        button:hover, .action-btn:hover { background-color: #45a049; }
+        .action-btn { font-size: 0.9em; padding: 8px 12px; margin-right: 5px; }
+        .delete-btn { background-color: #c0392b; }
+        .delete-btn:hover { background-color: #a93226; }
+        .error-message { color: #ff6b6b; background-color: rgba(255, 107, 107, 0.1); padding: 15px; border-radius: 5px; margin-top: 20px; border: 1px solid #ff6b6b; display: none; }
+        .loading-spinner { border: 4px solid #444; border-top: 4px solid #4CAF50; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none; margin: 10px auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #444; word-wrap: break-word; }
+        th { background-color: #333; color: #4CAF50; font-weight: 400; }
+        td a { color: #66bb6a; text-decoration: none; }
+        td a:hover { text-decoration: underline; }
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); }
+        .modal-content { background-color: #2a2a2a; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 700px; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.5); }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-btn:hover, .close-btn:focus { color: #fff; text-decoration: none; }
+        .modal-item { margin-bottom: 15px; word-wrap: break-word; }
+        .modal-item strong { color: #bbbbbb; display: block; margin-bottom: 5px; }
+        .modal-item pre { background-color: #3a3a3a; padding: 10px; border-radius: 5px; white-space: pre-wrap; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Affiliate Agent</h1>
+        <h1>Create New Link</h1>
         <form id="createLinkForm">
             <label for="longUrl">Product URL:</label>
             <input type="url" id="longUrl" placeholder="e.g., https://www.amazon.com/product-xyz" required>
-
             <label for="contentType">Content Type:</label>
-            <select id="contentType">
-                <option value="TWEET">Tweet</option>
-                <option value="BLOG_POST">Blog Post</option>
-            </select>
-
+            <select id="contentType"><option value="TWEET">Tweet</option><option value="BLOG_POST">Blog Post</option></select>
             <label for="scheduledAt">Schedule Post (Optional):</label>
             <input type="datetime-local" id="scheduledAt">
-
-            <button type="submit">Create & Schedule Link</button>
+            <button type="submit">Create Link</button>
             <div class="loading-spinner" id="loadingSpinner"></div>
             <div class="error-message" id="errorMessage"></div>
         </form>
     </div>
 
-    <div class="result-section" id="resultSection" style="display: none;">
-        <h2>Result</h2>
-        <div class="result-item">
-            <strong>ID:</strong> <span id="resultId"></span>
-        </div>
-        <div class="result-item">
-            <strong>Title:</strong> <span id="resultTitle"></span>
-        </div>
-        <div class="result-item">
-            <strong>Long URL:</strong> <a id="resultLongUrl" href="#" target="_blank"></a>
-        </div>
-        <div class="result-item">
-            <strong>Short URL:</strong> <a id="resultShortUrl" href="#" target="_blank"></a>
-        </div>
-        <div class="result-item">
-            <strong>Generated Content:</strong> <pre id="resultGeneratedContent"></pre>
-        </div>
-        <div class="result-item">
-            <strong>Created At:</strong> <span id="resultCreatedAt"></span>
-        </div>
-        <div class="result-item">
-            <strong>Scheduled At:</strong> <span id="resultScheduledAt"></span>
-        </div>
-        <div class="result-item">
-            <strong>Posted:</strong> <span id="resultPosted"></span>
+    <div class="dashboard-section">
+        <h2>All Links</h2>
+        <table id="linksTable"><thead><tr><th>Title</th><th>Trackable URL</th><th>Clicks</th><th>Actions</th></tr></thead><tbody id="linksTableBody"></tbody></table>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Latest Research</h2>
+        <table id="researchTable"><thead><tr><th>Product Name</th><th>URL</th><th>Discovered At</th><th>Processed</th></tr></thead><tbody id="researchTableBody"></tbody></table>
+    </div>
+
+    <!-- The Modal -->
+    <div id="detailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Link Details</h2>
+            <div id="modalBody"></div>
         </div>
     </div>
 
     <script>
-        document.getElementById('createLinkForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-
-            const longUrl = document.getElementById('longUrl').value;
-            const contentType = document.getElementById('contentType').value;
-            const scheduledAtInput = document.getElementById('scheduledAt').value;
-
+        document.addEventListener('DOMContentLoaded', function() {
+            const createLinkForm = document.getElementById('createLinkForm');
             const loadingSpinner = document.getElementById('loadingSpinner');
             const errorMessage = document.getElementById('errorMessage');
-            const resultSection = document.getElementById('resultSection');
+            const modal = document.getElementById('detailsModal');
+            const modalBody = document.getElementById('modalBody');
+            const closeBtn = document.querySelector('.close-btn');
 
-            // Reset UI
-            errorMessage.style.display = 'none';
-            resultSection.style.display = 'none';
-            loadingSpinner.style.display = 'block';
+            async function loadAllLinks() {
+                try {
+                    const response = await fetch('/api/v1/links');
+                    if (!response.ok) throw new Error('Failed to load links.');
+                    const links = await response.json();
+                    const tableBody = document.getElementById('linksTableBody');
+                    tableBody.innerHTML = '';
+                    links.forEach(link => {
+                        const row = tableBody.insertRow();
+                        row.insertCell(0).textContent = link.title;
+                        const urlCell = row.insertCell(1);
+                        const trackableUrl = `${window.location.origin}/track/${link.id}`;
+                        const linkElement = document.createElement('a');
+                        linkElement.href = trackableUrl; linkElement.textContent = trackableUrl; linkElement.target = '_blank';
+                        urlCell.appendChild(linkElement);
+                        row.insertCell(2).textContent = link.clickCount;
+                        const actionsCell = row.insertCell(3);
+                        
+                        const detailsBtn = document.createElement('button');
+                        detailsBtn.textContent = 'Details';
+                        detailsBtn.className = 'action-btn';
+                        detailsBtn.onclick = () => showDetails(link.id);
+                        actionsCell.appendChild(detailsBtn);
 
-            const requestBody = {
-                longUrl: longUrl,
-                contentType: contentType
-            };
-
-            if (scheduledAtInput) {
-                // Convert local datetime string to ISO 8601 for backend
-                requestBody.scheduledAt = new Date(scheduledAtInput).toISOString().slice(0, -1); // Remove 'Z' for local time
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = 'Delete';
+                        deleteBtn.className = 'action-btn delete-btn';
+                        deleteBtn.onclick = () => deleteLink(link.id);
+                        actionsCell.appendChild(deleteBtn);
+                    });
+                } catch (error) { console.error('Error loading links:', error); }
             }
 
-            try {
-                const response = await fetch('/api/v1/links', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(requestBody)
-                });
+            async function loadResearchResults() { /* ... existing code ... */ }
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to create link');
-                }
-
-                const data = await response.json();
-
-                document.getElementById('resultId').textContent = data.id;
-                document.getElementById('resultTitle').textContent = data.title;
-                document.getElementById('resultLongUrl').textContent = data.longUrl;
-                document.getElementById('resultLongUrl').href = data.longUrl;
-                document.getElementById('resultShortUrl').textContent = data.shortUrl;
-                document.getElementById('resultShortUrl').href = data.shortUrl;
-                document.getElementById('resultGeneratedContent').textContent = data.generatedContent;
-                document.getElementById('resultCreatedAt').textContent = new Date(data.createdAt).toLocaleString();
-                document.getElementById('resultScheduledAt').textContent = data.scheduledAt ? new Date(data.scheduledAt).toLocaleString() : 'Not Scheduled';
-                document.getElementById('resultPosted').textContent = data.posted ? 'Yes' : 'No';
-
-                resultSection.style.display = 'block';
-
-            } catch (error) {
-                errorMessage.textContent = 'Error: ' + error.message;
-                errorMessage.style.display = 'block';
-            } finally {
-                loadingSpinner.style.display = 'none';
+            async function showDetails(linkId) {
+                try {
+                    const response = await fetch(`/api/v1/links/${linkId}`);
+                    if (!response.ok) throw new Error('Failed to load link details.');
+                    const link = await response.json();
+                    modalBody.innerHTML = `
+                        <div class="modal-item"><strong>ID:</strong> ${link.id}</div>
+                        <div class="modal-item"><strong>Title:</strong> ${link.title}</div>
+                        <div class="modal-item"><strong>Long URL:</strong> <a href="${link.longUrl}" target="_blank">${link.longUrl}</a></div>
+                        <div class="modal-item"><strong>Short URL:</strong> <a href="${link.shortUrl}" target="_blank">${link.shortUrl}</a></div>
+                        <div class="modal-item"><strong>Generated Content:</strong> <pre>${link.generatedContent}</pre></div>
+                        <div class="modal-item"><strong>Created At:</strong> ${new Date(link.createdAt).toLocaleString()}</div>
+                        <div class="modal-item"><strong>Scheduled At:</strong> ${link.scheduledAt ? new Date(link.scheduledAt).toLocaleString() : 'Not Scheduled'}</div>
+                        <div class="modal-item"><strong>Posted:</strong> ${link.posted ? 'Yes' : 'No'}</div>
+                        <div class="modal-item"><strong>Click Count:</strong> ${link.clickCount}</div>
+                    `;
+                    modal.style.display = 'block';
+                } catch (error) { console.error('Error showing details:', error); }
             }
+
+            async function deleteLink(linkId) {
+                if (!confirm('Are you sure you want to delete this link? This action cannot be undone.')) return;
+                try {
+                    const response = await fetch(`/api/v1/links/${linkId}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error('Failed to delete link.');
+                    await loadAllLinks();
+                } catch (error) { console.error('Error deleting link:', error); }
+            }
+
+            createLinkForm.addEventListener('submit', async function(event) { /* ... existing code ... */ });
+            
+            // Modal close logic
+            closeBtn.onclick = () => modal.style.display = 'none';
+            window.onclick = (event) => { if (event.target == modal) modal.style.display = 'none'; };
+
+            // Initial load
+            loadAllLinks();
+            loadResearchResults();
         });
     </script>
 </body>

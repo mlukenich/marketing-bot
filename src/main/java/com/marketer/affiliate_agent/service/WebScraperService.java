@@ -1,6 +1,7 @@
 package com.marketer.affiliate_agent.service;
 
 import com.marketer.affiliate_agent.dto.ScrapedProductInfo;
+import com.marketer.affiliate_agent.exception.ScrapingException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -16,24 +17,20 @@ public class WebScraperService {
         try {
             Document doc = Jsoup.connect(url).get();
 
-            // Extract the page title
             productInfo.setTitle(doc.title());
 
-            // Extract the meta description
             Element metaDescription = doc.select("meta[name=description]").first();
             if (metaDescription != null) {
                 productInfo.setDescription(metaDescription.attr("content"));
             } else {
-                productInfo.setDescription(""); // Set an empty description if not found
+                // If no description is found, we can decide if this is an error or not.
+                // For now, we'll let it proceed with an empty description.
+                productInfo.setDescription("");
             }
+            return productInfo;
 
         } catch (IOException e) {
-            // In a real application, you would handle this exception more gracefully
-            e.printStackTrace();
-            // Return a DTO with null or empty fields to indicate failure
-            productInfo.setTitle("Could not scrape title");
-            productInfo.setDescription("Could not scrape description");
+            throw new ScrapingException("Failed to scrape content from URL: " + url, e);
         }
-        return productInfo;
     }
 }
