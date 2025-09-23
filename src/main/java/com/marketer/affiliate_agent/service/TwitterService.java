@@ -1,5 +1,6 @@
 package com.marketer.affiliate_agent.service;
 
+import com.marketer.affiliate_agent.entity.AffiliateLink;
 import com.marketer.affiliate_agent.exception.ApiException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,8 @@ public class TwitterService implements SocialMediaService {
     }
 
     @Override
-    public void post(String message) {
+    public void post(AffiliateLink link, String trackableUrl) {
+        String message = link.getGeneratedContent() + "\n" + trackableUrl;
         try {
             twitter.updateStatus(message);
         } catch (TwitterException e) {

@@ -1,5 +1,6 @@
 package com.marketer.affiliate_agent.service;
 
+import com.marketer.affiliate_agent.entity.AffiliateLink;
 import com.marketer.affiliate_agent.exception.ApiException;
 import com.restfb.DefaultFacebookClient;
 import com.restfb.FacebookClient;
@@ -23,19 +24,20 @@ public class FacebookService implements SocialMediaService {
     }
 
     @Override
-    public void post(String message) {
+    public void post(AffiliateLink link, String trackableUrl) {
+        // For Facebook, we can combine the message and the link in the 'message' parameter.
+        // A more advanced implementation could use the 'link' parameter for a link preview.
+        String message = link.getGeneratedContent() + "\n\n" + trackableUrl;
+
         try {
-            // The endpoint for posting to a page's feed is "/PAGE_ID/feed"
             String postEndpoint = "/" + pageId + "/feed";
-            
-            // Publish the post
+
             GraphResponse publishResponse = facebookClient.publish(postEndpoint, GraphResponse.class,
                     Parameter.with("message", message));
 
             System.out.println("Successfully posted to Facebook. Post ID: " + publishResponse.getId());
 
         } catch (FacebookException e) {
-            // Wrap the Facebook-specific exception in our custom ApiException
             throw new ApiException("Failed to post to Facebook: " + e.getMessage(), e);
         }
     }

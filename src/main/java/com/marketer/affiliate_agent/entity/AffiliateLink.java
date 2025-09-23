@@ -27,6 +27,9 @@ public class AffiliateLink {
     @Column(length = 1024)
     private String generatedContent;
 
+    @Column(length = 2048) // Allow for longer URLs
+    private String productImageUrl;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
@@ -34,5 +37,5 @@ public class AffiliateLink {
 
     private boolean posted = false;
 
-    private long clickCount = 0; // New field for click tracking
+    private long clickCount = 0;
 }

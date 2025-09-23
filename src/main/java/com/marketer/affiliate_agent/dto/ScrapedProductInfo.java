@@ -6,4 +6,5 @@ import lombok.Data;
 public class ScrapedProductInfo {
     private String title;
     private String description;
+    private String imageUrl;
 }

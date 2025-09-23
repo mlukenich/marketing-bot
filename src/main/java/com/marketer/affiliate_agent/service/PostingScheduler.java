@@ -30,14 +30,13 @@ public class PostingScheduler {
 
         for (AffiliateLink link : linksToPost) {
             String trackableUrl = baseUrl + "/track/" + link.getId();
-            String message = link.getGeneratedContent() + "\n" + trackableUrl;
 
             System.out.println("Broadcasting post for link ID: " + link.getId());
 
-            // Broadcast the message to all social media services
+            // Broadcast the rich content to all social media services
             for (SocialMediaService service : socialMediaServices) {
                 try {
-                    service.post(message);
+                    service.post(link, trackableUrl);
                 } catch (Exception e) {
                     // Log the error for a specific service but continue with others
                     System.err.println("Failed to post to " + service.getClass().getSimpleName() + ": " + e.getMessage());

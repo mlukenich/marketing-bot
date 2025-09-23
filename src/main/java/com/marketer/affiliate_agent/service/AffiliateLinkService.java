@@ -37,6 +37,8 @@ public class AffiliateLinkService {
         ScrapedProductInfo productInfo = webScraperService.scrapeProductInfo(longUrl);
         String title = productInfo.getTitle();
         String description = productInfo.getDescription();
+        String imageUrl = productInfo.getImageUrl(); // Get the image URL
+
         String shortUrl = bitlyService.shortenUrl(longUrl);
         String generatedContent = openAiService.generatePostContent(title, description, contentType);
 
@@ -45,6 +47,7 @@ public class AffiliateLinkService {
         newLink.setLongUrl(longUrl);
         newLink.setShortUrl(shortUrl);
         newLink.setGeneratedContent(generatedContent);
+        newLink.setProductImageUrl(imageUrl); // Save the image URL
         newLink.setScheduledAt(scheduledAt);
         return affiliateLinkRepository.save(newLink);
     }
