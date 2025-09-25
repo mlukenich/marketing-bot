@@ -1,6 +1,7 @@
 package com.marketer.affiliate_agent.controller;
 
 import com.marketer.affiliate_agent.dto.CreateLinkRequest;
+import com.marketer.affiliate_agent.dto.LinkClickResponse;
 import com.marketer.affiliate_agent.dto.LinkResponse;
 import com.marketer.affiliate_agent.entity.AffiliateLink;
 import com.marketer.affiliate_agent.service.AffiliateLinkService;
@@ -43,5 +44,12 @@ public class AffiliateController {
     public ResponseEntity<Void> deleteLink(@PathVariable Long id) {
         affiliateLinkService.deleteLink(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @GetMapping("/{id}/clicks")
+    public List<LinkClickResponse> getLinkClicks(@PathVariable Long id) {
+        return affiliateLinkService.getLinkClicks(id).stream()
+                .map(LinkClickResponse::from)
+                .collect(Collectors.toList());
     }
 }

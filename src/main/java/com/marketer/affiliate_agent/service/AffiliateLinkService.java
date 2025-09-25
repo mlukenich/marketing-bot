@@ -3,6 +3,7 @@ package com.marketer.affiliate_agent.service;
 import com.marketer.affiliate_agent.dto.ContentType;
 import com.marketer.affiliate_agent.dto.ScrapedProductInfo;
 import com.marketer.affiliate_agent.entity.AffiliateLink;
+import com.marketer.affiliate_agent.entity.LinkClick;
 import com.marketer.affiliate_agent.exception.ApiException;
 import com.marketer.affiliate_agent.repository.AffiliateLinkRepository;
 import com.marketer.affiliate_agent.repository.LinkClickRepository;
@@ -37,7 +38,7 @@ public class AffiliateLinkService {
         ScrapedProductInfo productInfo = webScraperService.scrapeProductInfo(longUrl);
         String title = productInfo.getTitle();
         String description = productInfo.getDescription();
-        String imageUrl = productInfo.getImageUrl(); // Get the image URL
+        String imageUrl = productInfo.getImageUrl();
 
         String shortUrl = bitlyService.shortenUrl(longUrl);
         String generatedContent = openAiService.generatePostContent(title, description, contentType);
@@ -47,7 +48,7 @@ public class AffiliateLinkService {
         newLink.setLongUrl(longUrl);
         newLink.setShortUrl(shortUrl);
         newLink.setGeneratedContent(generatedContent);
-        newLink.setProductImageUrl(imageUrl); // Save the image URL
+        newLink.setProductImageUrl(imageUrl);
         newLink.setScheduledAt(scheduledAt);
         return affiliateLinkRepository.save(newLink);
     }
@@ -68,5 +69,12 @@ public class AffiliateLinkService {
         }
         linkClickRepository.deleteByAffiliateLinkId(id);
         affiliateLinkRepository.deleteById(id);
+    }
+
+    public List<LinkClick> getLinkClicks(Long linkId) {
+        if (!affiliateLinkRepository.existsById(linkId)) {
+            throw new ApiException("Affiliate link not found with ID: " + linkId);
+        }
+        return linkClickRepository.findByAffiliateLinkId(linkId);
     }
 }
