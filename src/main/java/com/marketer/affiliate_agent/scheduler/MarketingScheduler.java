@@ -1,9 +1,14 @@
 package com.marketer.affiliate_agent.scheduler;
 
 import com.marketer.affiliate_agent.dto.ContentType;
+import com.marketer.affiliate_agent.entity.AffiliateLink;
 import com.marketer.affiliate_agent.entity.ResearchResult;
+import com.marketer.affiliate_agent.repository.AffiliateLinkRepository;
 import com.marketer.affiliate_agent.repository.ResearchResultRepository;
 import com.marketer.affiliate_agent.service.AffiliateLinkService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -13,44 +18,63 @@ import java.util.Optional;
 @Component
 public class MarketingScheduler {
 
-    private final ResearchResultRepository researchResultRepository;
-    private final AffiliateLinkService affiliateLinkService;
+    private static final Logger log = LoggerFactory.getLogger(MarketingScheduler.class);
 
-    public MarketingScheduler(ResearchResultRepository researchResultRepository, AffiliateLinkService affiliateLinkService) {
+    private final ResearchResultRepository researchResultRepository;
+    private final AffiliateLinkRepository affiliateLinkRepository;
+    private final AffiliateLinkService affiliateLinkService;
+    private final long staggerMinutes;
+
+    public MarketingScheduler(ResearchResultRepository researchResultRepository,
+                              AffiliateLinkRepository affiliateLinkRepository,
+                              AffiliateLinkService affiliateLinkService,
+                              @Value("${scheduler.marketing.stagger-minutes}") long staggerMinutes) {
         this.researchResultRepository = researchResultRepository;
+        this.affiliateLinkRepository = affiliateLinkRepository;
         this.affiliateLinkService = affiliateLinkService;
+        this.staggerMinutes = staggerMinutes;
     }
 
-    // Run every 5 minutes to check for unprocessed research
-    @Scheduled(fixedRate = 300000)
+    @Scheduled(cron = "${scheduler.marketing.cron}")
     public void processResearchFindings() {
-        System.out.println("Checking for unprocessed research findings at " + LocalDateTime.now());
+        log.info("Checking for unprocessed research findings...");
 
-        // Find the oldest unprocessed research result
         Optional<ResearchResult> unprocessedResult = researchResultRepository.findFirstByProcessedFalseOrderByDiscoveredAtAsc();
 
         unprocessedResult.ifPresent(result -> {
-            System.out.println("Found unprocessed research result: " + result.getProductName());
+            log.info("Found unprocessed research result: {}", result.getProductName());
             try {
-                // Trigger the marketing pipeline
+                // Calculate the next schedule time to stagger posts
+                LocalDateTime nextScheduleTime = calculateNextScheduleTime();
+
                 affiliateLinkService.createLink(
                         result.getProductUrl(),
-                        ContentType.TWEET, // Default to creating a tweet
-                        LocalDateTime.now().plusMinutes(15) // Schedule it for 15 mins in the future
+                        ContentType.TWEET,
+                        nextScheduleTime
                 );
 
-                // Mark the result as processed
                 result.setProcessed(true);
                 researchResultRepository.save(result);
 
-                System.out.println("Successfully processed and scheduled post for: " + result.getProductName());
+                log.info("Successfully processed and scheduled post for: {} at {}", result.getProductName(), nextScheduleTime);
 
             } catch (Exception e) {
-                System.err.println("Failed to process research result for: " + result.getProductName());
-                e.printStackTrace();
-                // Optionally, you could add logic here to mark the result as failed
-                // to avoid retrying it indefinitely.
+                log.error("Failed to process research result for: {}", result.getProductName(), e);
             }
         });
+    }
+
+    private LocalDateTime calculateNextScheduleTime() {
+        // Find the latest scheduled post
+        Optional<AffiliateLink> lastScheduledLink = affiliateLinkRepository.findTopByOrderByScheduledAtDesc();
+
+        // If there's a last scheduled post and its time is in the future, schedule after it.
+        // Otherwise, schedule it a few minutes from now.
+        LocalDateTime baseTime = lastScheduledLink
+                .map(AffiliateLink::getScheduledAt)
+                .filter(time -> time.isAfter(LocalDateTime.now()))
+                .orElse(LocalDateTime.now());
+
+        return baseTime.plusMinutes(staggerMinutes);
     }
 }

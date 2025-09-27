@@ -3,6 +3,7 @@ package com.marketer.affiliate_agent.service;
 import com.marketer.affiliate_agent.dto.ContentType;
 import com.marketer.affiliate_agent.dto.ScrapedProductInfo;
 import com.marketer.affiliate_agent.entity.AffiliateLink;
+import com.marketer.affiliate_agent.entity.GeneratedContent;
 import com.marketer.affiliate_agent.entity.LinkClick;
 import com.marketer.affiliate_agent.exception.ApiException;
 import com.marketer.affiliate_agent.repository.AffiliateLinkRepository;
@@ -21,35 +22,53 @@ public class AffiliateLinkService {
     private final BitlyService bitlyService;
     private final OpenAiService openAiService;
     private final WebScraperService webScraperService;
+    private final AffiliateTransformationService affiliateTransformationService;
 
     public AffiliateLinkService(AffiliateLinkRepository affiliateLinkRepository,
                                 LinkClickRepository linkClickRepository,
                                 BitlyService bitlyService,
                                 OpenAiService openAiService,
-                                WebScraperService webScraperService) {
+                                WebScraperService webScraperService,
+                                AffiliateTransformationService affiliateTransformationService) {
         this.affiliateLinkRepository = affiliateLinkRepository;
         this.linkClickRepository = linkClickRepository;
         this.bitlyService = bitlyService;
         this.openAiService = openAiService;
         this.webScraperService = webScraperService;
+        this.affiliateTransformationService = affiliateTransformationService;
     }
 
-    public AffiliateLink createLink(String longUrl, ContentType contentType, LocalDateTime scheduledAt) {
-        ScrapedProductInfo productInfo = webScraperService.scrapeProductInfo(longUrl);
+    public AffiliateLink createLink(String originalUrl, ContentType contentType, LocalDateTime scheduledAt) {
+        // 1. Scrape product info from the original URL
+        ScrapedProductInfo productInfo = webScraperService.scrapeProductInfo(originalUrl);
         String title = productInfo.getTitle();
         String description = productInfo.getDescription();
         String imageUrl = productInfo.getImageUrl();
 
-        String shortUrl = bitlyService.shortenUrl(longUrl);
-        String generatedContent = openAiService.generatePostContent(title, description, contentType);
+        // 2. Transform the original URL into a monetizable affiliate link
+        String affiliateUrl = affiliateTransformationService.transform(originalUrl);
 
+        // 3. Shorten the new affiliate link
+        String shortUrl = bitlyService.shortenUrl(affiliateUrl);
+
+        // 4. Generate promotional content
+        List<String> generatedContentVariations = openAiService.generatePostContent(title, description, contentType);
+
+        // 5. Save the link and content to the database
         AffiliateLink newLink = new AffiliateLink();
         newLink.setTitle(title);
-        newLink.setLongUrl(longUrl);
+        newLink.setLongUrl(affiliateUrl); // IMPORTANT: Store the final affiliate URL
         newLink.setShortUrl(shortUrl);
-        newLink.setGeneratedContent(generatedContent);
         newLink.setProductImageUrl(imageUrl);
         newLink.setScheduledAt(scheduledAt);
+
+        for (String content : generatedContentVariations) {
+            GeneratedContent newContent = new GeneratedContent();
+            newContent.setContent(content);
+            newContent.setAffiliateLink(newLink);
+            newLink.getGeneratedContent().add(newContent);
+        }
+
         return affiliateLinkRepository.save(newLink);
     }
 

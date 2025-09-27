@@ -1,33 +1,29 @@
 package com.marketer.affiliate_agent.scheduler;
 
 import com.marketer.affiliate_agent.service.ResearchService;
-import org.springframework.beans.factory.annotation.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
 
 @Component
 public class ResearchScheduler {
 
-    private final ResearchService researchService;
+    private static final Logger log = LoggerFactory.getLogger(ResearchScheduler.class);
 
-    @Value("${research.trending.url}")
-    private String trendingPageUrl;
+    private final ResearchService researchService;
 
     public ResearchScheduler(ResearchService researchService) {
         this.researchService = researchService;
     }
 
-    @Scheduled(fixedRate = 3600000) // 3600000 ms = 1 hour
-    public void performResearch() {
-        System.out.println("Starting research cycle at " + LocalDateTime.now());
+    @Scheduled(cron = "${scheduler.research.cron}")
+    public void performResearchCycle() {
+        log.info("Triggering research cycle as per cron schedule...");
         try {
-            researchService.researchTrendingProducts(trendingPageUrl);
-            System.out.println("Research cycle completed successfully.");
+            researchService.performResearch();
         } catch (Exception e) {
-            System.err.println("Error during research cycle: " + e.getMessage());
-            e.printStackTrace();
+            log.error("An unexpected error occurred during the research cycle", e);
         }
     }
 }

@@ -12,6 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class OpenAiService {
 
@@ -23,7 +27,7 @@ public class OpenAiService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public String generatePostContent(String productName, String productDescription, ContentType contentType) {
+    public List<String> generatePostContent(String productName, String productDescription, ContentType contentType) {
         String prompt = buildPrompt(productName, productDescription, contentType);
         OpenAiRequest request = new OpenAiRequest("gpt-3.5-turbo", prompt);
 
@@ -37,7 +41,12 @@ public class OpenAiService {
             OpenAiResponse response = restTemplate.postForObject(openaiApiUrl, entity, OpenAiResponse.class);
 
             if (response != null && !response.getChoices().isEmpty() && response.getChoices().get(0).getMessage() != null) {
-                return response.getChoices().get(0).getMessage().getContent();
+                String rawContent = response.getChoices().get(0).getMessage().getContent();
+                // Parse the response into a list, assuming the AI returns a numbered list on new lines
+                return Arrays.stream(rawContent.split("\n"))
+                        .map(line -> line.replaceAll("^\\d+\\.\\s*", "").trim()) // Remove numbering (e.g., "1. ") and trim whitespace
+                        .filter(line -> !line.isEmpty())
+                        .collect(Collectors.toList());
             } else {
                 throw new ApiException("Invalid response from OpenAI API. Response was empty or malformed.");
             }
@@ -47,24 +56,18 @@ public class OpenAiService {
     }
 
     private String buildPrompt(String productName, String productDescription, ContentType contentType) {
+        String basePrompt = String.format(
+                "Generate 3 distinct and engaging ad copy variations for a product called '%s'. " +
+                "Description: '%s'. " +
+                "Each variation should be on a new line, starting with a number (e.g., '1. ').",
+                productName, productDescription
+        );
+
         switch (contentType) {
             case TWEET:
-                return String.format(
-                        "Create a short, engaging tweet promoting a product called '%s'. " +
-                                "Description: '%s'. " +
-                                "Include a clear call to action and 2-3 relevant hashtags. " +
-                                "Keep it under 280 characters.",
-                        productName, productDescription
-                );
+                return basePrompt + " The ad copy should be a short, engaging tweet under 280 characters, with a clear call to action and 2-3 relevant hashtags.";
             case BLOG_POST:
-                return String.format(
-                        "Write a short, engaging blog post of about 3-4 paragraphs promoting a product called '%s'. " +
-                                "Description: '%s'. " +
-                                "The tone should be enthusiastic and informative. " +
-                                "Start with a catchy headline. " +
-                                "End with a clear call to action encouraging readers to check out the product.",
-                        productName, productDescription
-                );
+                return basePrompt + " The ad copy should be a short, engaging blog post of about 3-4 paragraphs, with an enthusiastic and informative tone, a catchy headline, and a clear call to action.";
             default:
                 throw new IllegalArgumentException("Unsupported content type: " + contentType);
         }

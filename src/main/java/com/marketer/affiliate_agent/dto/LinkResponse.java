@@ -1,9 +1,12 @@
 package com.marketer.affiliate_agent.dto;
 
 import com.marketer.affiliate_agent.entity.AffiliateLink;
+import com.marketer.affiliate_agent.entity.GeneratedContent;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 public class LinkResponse {
@@ -11,10 +14,10 @@ public class LinkResponse {
     private String title;
     private String longUrl;
     private String shortUrl;
-    private String generatedContent;
+    private List<String> generatedContent;
+    private String productImageUrl;
     private LocalDateTime createdAt;
     private LocalDateTime scheduledAt;
-    private boolean posted;
     private long clickCount;
 
     public static LinkResponse from(AffiliateLink link) {
@@ -23,11 +26,17 @@ public class LinkResponse {
         response.setTitle(link.getTitle());
         response.setLongUrl(link.getLongUrl());
         response.setShortUrl(link.getShortUrl());
-        response.setGeneratedContent(link.getGeneratedContent());
+        response.setProductImageUrl(link.getProductImageUrl());
         response.setCreatedAt(link.getCreatedAt());
         response.setScheduledAt(link.getScheduledAt());
-        response.setPosted(link.isPosted());
         response.setClickCount(link.getClickCount());
+
+        if (link.getGeneratedContent() != null) {
+            response.setGeneratedContent(link.getGeneratedContent().stream()
+                    .map(GeneratedContent::getContent)
+                    .collect(Collectors.toList()));
+        }
+
         return response;
     }
 }

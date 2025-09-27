@@ -23,7 +23,7 @@ public class SchedulerController {
 
     @PostMapping("/research/trigger")
     public ResponseEntity<Map<String, String>> triggerResearch() {
-        researchScheduler.performResearch();
+        researchScheduler.performResearchCycle();
         return ResponseEntity.ok(Map.of("message", "Research cycle triggered successfully."));
     }
 

@@ -15,14 +15,9 @@ public class LinkClick {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "affiliate_link_id", nullable = false)
-    private AffiliateLink affiliateLink;
+    @JoinColumn(name = "generated_content_id", nullable = false)
+    private GeneratedContent generatedContent;
 
     @CreationTimestamp
     private LocalDateTime clickedAt;
-
-    // Potentially add more fields for analytics later, e.g.,
-    // private String ipAddress;
-    // private String userAgent;
-    // private String referrer;
 }

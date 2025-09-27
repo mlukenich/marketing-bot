@@ -2,85 +2,53 @@ package com.marketer.affiliate_agent.service;
 
 import com.marketer.affiliate_agent.dto.ScrapedProductOffer;
 import com.marketer.affiliate_agent.entity.ResearchResult;
-import com.marketer.affiliate_agent.exception.ScrapingException;
 import com.marketer.affiliate_agent.repository.ResearchResultRepository;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import com.marketer.affiliate_agent.service.source.ProductSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ResearchService {
 
+    private static final Logger log = LoggerFactory.getLogger(ResearchService.class);
+    private final List<ProductSource> productSources;
     private final ResearchResultRepository researchResultRepository;
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36";
 
-    public ResearchService(ResearchResultRepository researchResultRepository) {
+    public ResearchService(List<ProductSource> productSources, ResearchResultRepository researchResultRepository) {
+        this.productSources = productSources;
         this.researchResultRepository = researchResultRepository;
     }
 
-    public List<ScrapedProductOffer> researchTrendingProducts(String trendingPageUrl) {
-        List<ScrapedProductOffer> offers = new ArrayList<>();
-        try {
-            Document doc = Jsoup.connect(trendingPageUrl).userAgent(USER_AGENT).get();
+    public void performResearch() {
+        log.info("Starting research cycle across {} sources...", productSources.size());
 
-            Elements productElements = doc.select("div.a-cardui.fluid-quad-card.fluid-card");
+        for (ProductSource source : productSources) {
+            log.info("Querying product source: {}", source.getClass().getSimpleName());
+            try {
+                List<ScrapedProductOffer> offers = source.findProducts();
+                log.info("Found {} potential offers from {}.", offers.size(), source.getClass().getSimpleName());
 
-            for (Element element : productElements) {
-                ScrapedProductOffer offer = new ScrapedProductOffer();
-
-                Element linkElement = element.selectFirst("a.a-link-normal");
-                if (linkElement != null) {
-                    String productUrl = linkElement.attr("abs:href");
-                    offer.setUrl(productUrl);
-
-                    Element imgElement = linkElement.selectFirst("img");
-                    if (imgElement != null) {
-                        offer.setName(imgElement.attr("alt"));
-                        offer.setImageUrl(imgElement.attr("src"));
-                    }
-
-                    if (offer.getName() != null && !offer.getName().isEmpty() && researchResultRepository.findByProductUrl(productUrl).isEmpty()) {
-                        // Perform deep-dive scrape for detailed description
-                        String detailedDescription = scrapeProductDetails(productUrl);
-                        offer.setDescription(detailedDescription);
-
-                        offers.add(offer);
+                for (ScrapedProductOffer offer : offers) {
+                    // Ensure the product hasn't been discovered already
+                    if (researchResultRepository.findByProductUrl(offer.getUrl()).isEmpty()) {
                         ResearchResult result = new ResearchResult();
                         result.setProductName(offer.getName());
                         result.setProductUrl(offer.getUrl());
                         result.setProductDescription(offer.getDescription());
                         result.setProductImageUrl(offer.getImageUrl());
                         researchResultRepository.save(result);
+                        log.info("Saved new product offer: {}", offer.getName());
+                    } else {
+                        log.debug("Skipping already discovered product: {}", offer.getName());
                     }
                 }
+            } catch (Exception e) {
+                log.error("Failed to find products from source {}: {}", source.getClass().getSimpleName(), e.getMessage(), e);
             }
-
-        } catch (IOException e) {
-            throw new ScrapingException("Failed to research trending products from URL: " + trendingPageUrl, e);
         }
-        return offers;
-    }
-
-    private String scrapeProductDetails(String productUrl) {
-        try {
-            Document productDoc = Jsoup.connect(productUrl).userAgent(USER_AGENT).get();
-            // Specific selector for Amazon's "About this item" bullet points
-            Elements featureBullets = productDoc.select("#feature-bullets .a-list-item");
-            if (!featureBullets.isEmpty()) {
-                return featureBullets.stream()
-                        .map(Element::text)
-                        .collect(Collectors.joining(". "));
-            }
-        } catch (IOException e) {
-            System.err.println("Failed to scrape details for " + productUrl + ": " + e.getMessage());
-        }
-        return ""; // Return empty string if details can't be found
+        log.info("Research cycle finished.");
     }
 }

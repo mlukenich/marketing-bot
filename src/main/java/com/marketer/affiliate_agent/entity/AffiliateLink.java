@@ -1,14 +1,12 @@
 package com.marketer.affiliate_agent.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data
@@ -24,18 +22,16 @@ public class AffiliateLink {
 
     private String shortUrl;
 
-    @Column(length = 1024)
-    private String generatedContent;
+    @OneToMany(mappedBy = "affiliateLink", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GeneratedContent> generatedContent = new ArrayList<>();
 
-    @Column(length = 2048) // Allow for longer URLs
+    @Column(length = 2048)
     private String productImageUrl;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
 
     private LocalDateTime scheduledAt;
-
-    private boolean posted = false;
 
     private long clickCount = 0;
 }

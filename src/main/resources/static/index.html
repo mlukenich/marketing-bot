@@ -27,7 +27,6 @@
         th { background-color: #333; color: #4CAF50; font-weight: 400; }
         td a { color: #66bb6a; text-decoration: none; }
         td a:hover { text-decoration: underline; }
-        /* Modal Styles */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); }
         .modal-content { background-color: #2a2a2a; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 700px; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.5); }
         .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
@@ -41,7 +40,17 @@
 <body>
     <div class="container">
         <h1>Create New Link</h1>
-        <form id="createLinkForm"> <!-- ... form elements from previous steps ... --> </form>
+        <form id="createLinkForm">
+            <label for="longUrl">Product URL:</label>
+            <input type="url" id="longUrl" placeholder="e.g., https://www.amazon.com/product-xyz" required>
+            <label for="contentType">Content Type:</label>
+            <select id="contentType"><option value="TWEET">Tweet</option><option value="BLOG_POST">Blog Post</option></select>
+            <label for="scheduledAt">Schedule Post (Optional):</label>
+            <input type="datetime-local" id="scheduledAt">
+            <button type="submit">Create Link</button>
+            <div class="loading-spinner" id="loadingSpinner"></div>
+            <div class="error-message" id="errorMessage"></div>
+        </form>
     </div>
 
     <div class="dashboard-section">
@@ -71,13 +80,18 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ... existing variables ...
+            const createLinkForm = document.getElementById('createLinkForm');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const errorMessage = document.getElementById('errorMessage');
+            const statusMessage = document.getElementById('statusMessage');
             const detailsModal = document.getElementById('detailsModal');
             const clicksModal = document.getElementById('clicksModal');
             const modalBody = document.getElementById('modalBody');
             const clicksModalBody = document.getElementById('clicksModalBody');
             const detailsCloseBtn = document.querySelector('.details-close');
             const clicksCloseBtn = document.querySelector('.clicks-close');
+            const runResearchBtn = document.getElementById('runResearchBtn');
+            const runMarketingBtn = document.getElementById('runMarketingBtn');
 
             async function loadAllLinks() {
                 try {
@@ -118,33 +132,67 @@
                 } catch (error) { console.error('Error loading links:', error); }
             }
 
-            async function showClicks(linkId) {
+            async function loadResearchResults() {
                 try {
-                    const response = await fetch(`/api/v1/links/${linkId}/clicks`);
-                    if (!response.ok) throw new Error('Failed to load click history.');
-                    const clicks = await response.json();
-                    clicksModalBody.innerHTML = ''; // Clear previous content
-                    if (clicks.length === 0) {
-                        clicksModalBody.innerHTML = '<p>No clicks recorded for this link yet.</p>';
-                    } else {
-                        const table = document.createElement('table');
-                        table.innerHTML = '<thead><tr><th>Click ID</th><th>Timestamp</th></tr></thead>';
-                        const tbody = document.createElement('tbody');
-                        clicks.forEach(click => {
-                            const row = tbody.insertRow();
-                            row.insertCell(0).textContent = click.id;
-                            row.insertCell(1).textContent = new Date(click.clickedAt).toLocaleString();
-                        });
-                        table.appendChild(tbody);
-                        clicksModalBody.appendChild(table);
-                    }
-                    clicksModal.style.display = 'block';
-                } catch (error) { console.error('Error showing clicks:', error); }
+                    const response = await fetch('/api/v1/research');
+                    if (!response.ok) throw new Error('Failed to load research results.');
+                    const results = await response.json();
+                    const tableBody = document.getElementById('researchTableBody');
+                    tableBody.innerHTML = '';
+                    results.forEach(result => {
+                        const row = tableBody.insertRow();
+                        row.insertCell(0).textContent = result.productName;
+                        const urlCell = row.insertCell(1);
+                        const linkElement = document.createElement('a');
+                        linkElement.href = result.productUrl; linkElement.textContent = 'View Product'; linkElement.target = '_blank';
+                        urlCell.appendChild(linkElement);
+                        row.insertCell(2).textContent = new Date(result.discoveredAt).toLocaleString();
+                        row.insertCell(3).textContent = result.processed ? 'Yes' : 'No';
+                    });
+                } catch (error) { console.error('Error loading research results:', error); }
             }
 
-            // ... other functions like loadResearchResults, showDetails, deleteLink, triggerScheduler ...
+            async function showDetails(linkId) {
+                try {
+                    const response = await fetch(`/api/v1/links/${linkId}`);
+                    if (!response.ok) throw new Error('Failed to load link details.');
+                    const link = await response.json();
 
-            // Modal close logic
+                    let contentHtml = 'No content generated.';
+                    if (link.generatedContent && link.generatedContent.length > 0) {
+                        contentHtml = link.generatedContent.map((content, index) => `
+                            <div class="modal-item">
+                                <strong>Variation ${index + 1}:</strong>
+                                <pre>${content}</pre>
+                            </div>
+                        `).join('');
+                    }
+
+                    modalBody.innerHTML = `
+                        <div class="modal-item"><strong>ID:</strong> ${link.id}</div>
+                        <div class="modal-item"><strong>Title:</strong> ${link.title}</div>
+                        <div class="modal-item"><strong>Long URL:</strong> <a href="${link.longUrl}" target="_blank">${link.longUrl}</a></div>
+                        <div class="modal-item"><strong>Short URL:</strong> <a href="${link.shortUrl}" target="_blank">${link.shortUrl}</a></div>
+                        <div class="modal-item"><strong>Product Image:</strong> <br><img src="${link.productImageUrl}" alt="Product Image" style="max-width: 200px; margin-top: 10px; border-radius: 5px;"></div>
+                        <hr>
+                        <h3>Ad Copy Variations</h3>
+                        ${contentHtml}
+                        <hr>
+                        <div class="modal-item"><strong>Created At:</strong> ${new Date(link.createdAt).toLocaleString()}</div>
+                        <div class="modal-item"><strong>Scheduled At:</strong> ${link.scheduledAt ? new Date(link.scheduledAt).toLocaleString() : 'Not Scheduled'}</div>
+                        <div class="modal-item"><strong>Posted:</strong> ${link.posted ? 'Yes' : 'No'}</div>
+                        <div class="modal-item"><strong>Click Count:</strong> ${link.clickCount}</div>
+                    `;
+                    detailsModal.style.display = 'block';
+                } catch (error) { console.error('Error showing details:', error); }
+            }
+
+            async function showClicks(linkId) { /* ... existing code ... */ }
+            async function deleteLink(linkId) { /* ... existing code ... */ }
+            async function triggerScheduler(url, successMessage) { /* ... existing code ... */ }
+
+            createLinkForm.addEventListener('submit', async function(event) { /* ... existing code ... */ });
+            
             detailsCloseBtn.onclick = () => detailsModal.style.display = 'none';
             clicksCloseBtn.onclick = () => clicksModal.style.display = 'none';
             window.onclick = (event) => {
@@ -152,9 +200,8 @@
                 if (event.target == clicksModal) clicksModal.style.display = 'none';
             };
 
-            // Initial load
             loadAllLinks();
-            // loadResearchResults(); // This function needs to be defined from previous steps
+            loadResearchResults();
         });
     </script>
 </body>

@@ -1,7 +1,10 @@
 package com.marketer.affiliate_agent.service;
 
 import com.marketer.affiliate_agent.entity.AffiliateLink;
+import com.marketer.affiliate_agent.entity.GeneratedContent;
 import com.marketer.affiliate_agent.exception.ApiException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -11,10 +14,13 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
 public class PinterestService implements SocialMediaService {
+
+    private static final Logger log = LoggerFactory.getLogger(PinterestService.class);
 
     private final String accessToken;
     private final String boardId;
@@ -29,11 +35,18 @@ public class PinterestService implements SocialMediaService {
 
     @Override
     public void post(AffiliateLink link, String trackableUrl) {
-        // Pinterest requires an image to create a Pin.
         if (link.getProductImageUrl() == null || link.getProductImageUrl().isEmpty()) {
-            System.err.println("Skipping Pinterest post for link ID: " + link.getId() + " because no product image is available.");
+            log.warn("Skipping Pinterest post for link ID: {} because no product image is available.", link.getId());
             return;
         }
+
+        List<GeneratedContent> contentVariations = link.getGeneratedContent();
+        if (contentVariations == null || contentVariations.isEmpty()) {
+            log.warn("Skipping Pinterest post for link ID: {} because no content is available.", link.getId());
+            return;
+        }
+
+        String note = contentVariations.get(0).getContent();
 
         String pinterestApiUrl = "https://api.pinterest.com/v5/pins";
 
@@ -41,7 +54,6 @@ public class PinterestService implements SocialMediaService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + accessToken);
 
-        // Construct the request body for the Pinterest API
         Map<String, Object> mediaSource = new HashMap<>();
         mediaSource.put("source_type", "image_url");
         mediaSource.put("url", link.getProductImageUrl());
@@ -49,14 +61,14 @@ public class PinterestService implements SocialMediaService {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("board_id", boardId);
         requestBody.put("link", trackableUrl);
-        requestBody.put("note", link.getGeneratedContent());
+        requestBody.put("note", note);
         requestBody.put("media_source", mediaSource);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
         try {
             restTemplate.postForObject(pinterestApiUrl, entity, String.class);
-            System.out.println("Successfully posted to Pinterest for link ID: " + link.getId());
+            log.info("Successfully posted to Pinterest for link ID: {}", link.getId());
         } catch (RestClientException e) {
             throw new ApiException("Failed to post to Pinterest: " + e.getMessage(), e);
         }
