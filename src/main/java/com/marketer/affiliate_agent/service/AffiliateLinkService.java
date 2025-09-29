@@ -39,25 +39,18 @@ public class AffiliateLinkService {
     }
 
     public AffiliateLink createLink(String originalUrl, ContentType contentType, LocalDateTime scheduledAt) {
-        // 1. Scrape product info from the original URL
         ScrapedProductInfo productInfo = webScraperService.scrapeProductInfo(originalUrl);
         String title = productInfo.getTitle();
         String description = productInfo.getDescription();
         String imageUrl = productInfo.getImageUrl();
 
-        // 2. Transform the original URL into a monetizable affiliate link
         String affiliateUrl = affiliateTransformationService.transform(originalUrl);
-
-        // 3. Shorten the new affiliate link
         String shortUrl = bitlyService.shortenUrl(affiliateUrl);
-
-        // 4. Generate promotional content
         List<String> generatedContentVariations = openAiService.generatePostContent(title, description, contentType);
 
-        // 5. Save the link and content to the database
         AffiliateLink newLink = new AffiliateLink();
         newLink.setTitle(title);
-        newLink.setLongUrl(affiliateUrl); // IMPORTANT: Store the final affiliate URL
+        newLink.setLongUrl(affiliateUrl);
         newLink.setShortUrl(shortUrl);
         newLink.setProductImageUrl(imageUrl);
         newLink.setScheduledAt(scheduledAt);
@@ -86,7 +79,7 @@ public class AffiliateLinkService {
         if (!affiliateLinkRepository.existsById(id)) {
             throw new ApiException("Affiliate link not found with ID: " + id);
         }
-        linkClickRepository.deleteByAffiliateLinkId(id);
+        // The cascade on the AffiliateLink entity will handle deleting the associated GeneratedContent and LinkClick entities.
         affiliateLinkRepository.deleteById(id);
     }
 
@@ -94,6 +87,6 @@ public class AffiliateLinkService {
         if (!affiliateLinkRepository.existsById(linkId)) {
             throw new ApiException("Affiliate link not found with ID: " + linkId);
         }
-        return linkClickRepository.findByAffiliateLinkId(linkId);
+        return linkClickRepository.findByGeneratedContent_AffiliateLink_Id(linkId);
     }
 }

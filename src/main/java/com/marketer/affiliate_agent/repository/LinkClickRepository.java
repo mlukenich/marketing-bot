@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface LinkClickRepository extends JpaRepository<LinkClick, Long> {
-    void deleteByAffiliateLinkId(Long affiliateLinkId);
-
-    List<LinkClick> findByAffiliateLinkId(Long affiliateLinkId);
+    // This new method correctly finds all clicks for a parent AffiliateLink by traversing the relationship.
+    List<LinkClick> findByGeneratedContent_AffiliateLink_Id(Long affiliateLinkId);
 }

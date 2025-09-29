@@ -2,137 +2,103 @@
 
 ## 1. Overview
 
-This project is a fully automated Affiliate Marketing Agent. Its purpose is to discover marketing opportunities, generate promotional content, and post it to multiple social media platforms with trackable affiliate links. The entire process, from research to posting, is designed to be hands-off after initial configuration.
-
-### Core Features
-
-- **Automated Research:** Periodically scrapes a configured URL to find new products to market.
-- **AI Content Generation:** Uses OpenAI to generate promotional content (Tweets, Blog Posts, etc.) for discovered products.
-- **Link Shortening & Tracking:** Shortens links using Bitly and tracks clicks on all posted links.
-- **Multi-Platform Social Media Posting:** Automatically posts generated content to configured social media accounts (Twitter, Facebook, Pinterest).
-- **Scheduling:** Allows for both immediate and scheduled posting of content.
-- **Web UI:** A simple dashboard to manually create links and view all created links and research results.
-- **Persistent Storage:** Uses a file-based database to ensure all data persists between application restarts.
+(This section remains the same)
 
 ---
 
 ## 2. Prerequisites
 
-To build and run this application, you will need:
-
-- **Java Development Kit (JDK):** Version 17 or higher.
-- **Apache Maven:** A build automation tool used to manage project dependencies and build the application.
+- **Docker Desktop:** For running the application locally.
+- **A Cloud Hosting Platform:** Such as Render, for production deployment.
 
 ---
 
 ## 3. Required Accounts & Credentials
 
-Before running the application, you must create accounts with the following services and obtain the necessary API keys and tokens. This is the most critical part of the setup.
-
-### 3.1. Bitly
-- **Purpose:** To shorten the long affiliate URLs.
-- **Account:** Create an account at [https://bitly.com/](https://bitly.com/).
-- **Credentials Needed:**
-    - `API Token`: Generate this from your Bitly account settings.
-
-### 3.2. OpenAI
-- **Purpose:** To generate promotional content.
-- **Account:** Create an account at [https://platform.openai.com/](https://platform.openai.com/).
-- **Credentials Needed:**
-    - `API Key`: Generate this from your OpenAI dashboard.
-
-### 3.3. Twitter
-- **Purpose:** To post promotional content to a Twitter account.
-- **Account:** You need a Twitter Developer account. Apply for one at [https://developer.twitter.com/](https://developer.twitter.com/).
-- **Credentials Needed (from your Twitter App's 'Keys and tokens' section):**
-    - `Consumer Key`
-    - `Consumer Secret`
-    - `Access Token`
-    - `Access Token Secret`
-
-### 3.4. Facebook
-- **Purpose:** To post promotional content to a Facebook Page.
-- **Account:** You need a Meta for Developers account ([https://developers.facebook.com/](https://developers.facebook.com/)) and a Facebook Page you manage.
-- **Credentials Needed:**
-    - `Page ID`: The unique ID of your Facebook Page.
-    - `Page Access Token`: Generate this from your App in the Meta Developer Portal. It requires the `pages_manage_posts` and `pages_read_engagement` permissions.
-
-### 3.5. Pinterest
-- **Purpose:** To post promotional content (Pins) to a Pinterest Board.
-- **Account:** You need a Pinterest Developers account ([https://developers.pinterest.com/](https://developers.pinterest.com/)).
-- **Credentials Needed:**
-    - `Access Token`: Generate this from your Pinterest App. It requires `pins:read`, `pins:write`, `boards:read`, and `boards:write` scopes.
-    - `Board ID`: The unique ID of the Pinterest Board you want to post to (found in the board's URL).
+(This section remains the same)
 
 ---
 
-## 4. Configuration
+## 4. Security Configuration
 
-All configuration is done in the `src/main/resources/application.properties` file. Open this file and fill in the placeholder values with the credentials you obtained in the previous step.
+This application is secured by **HTTP Basic Authentication**. All API endpoints and the web UI are protected by default. You must provide a username and password to access the application.
 
-```properties
-# Bitly API Token
-bitly.api.token=YOUR_BITLY_API_TOKEN
+These credentials are set via environment variables:
+- `APP_USER`: The username for the application.
+- `APP_PASSWORD`: The password for the application.
 
-# OpenAI API Key
-openai.api.url=https://api.openai.com/v1/chat/completions
-api-keys.openai=YOUR_OPENAI_API_KEY
+--- 
 
-# Twitter API Credentials
-twitter.oauth.consumerKey=YOUR_CONSUMER_KEY
-twitter.oauth.consumerSecret=YOUR_CONSUMER_SECRET
-twitter.oauth.accessToken=YOUR_ACCESS_TOKEN
-twitter.oauth.accessTokenSecret=YOUR_ACCESS_TOKEN_SECRET
+## 5. Deployment & Running
 
-# Facebook API Credentials
-facebook.page.id=YOUR_FACEBOOK_PAGE_ID
-facebook.page.accessToken=YOUR_PAGE_ACCESS_TOKEN
+This application is designed to be deployed as a Docker container. All secrets and configuration are provided via environment variables for maximum security.
 
-# Pinterest API Credentials
-pinterest.accessToken=YOUR_PINTEREST_ACCESS_TOKEN
-pinterest.boardId=YOUR_PINTEREST_BOARD_ID
+### 5.1. Environment Variables
 
-# Application Port
-server.port=8085
+To run the application, you must set the following environment variables in your hosting environment (e.g., in Render's "Environment" settings).
 
-# Research Feature Configuration
-# IMPORTANT: Replace this example URL with a real, scrapeable page.
-research.trending.url=https://www.amazon.com/bestsellers
-
-# Application Base URL for Trackable Links
-application.base-url=http://localhost:8085
+**Application Credentials:**
+```
+APP_USER=your_admin_username
+APP_PASSWORD=a_very_strong_and_secret_password
 ```
 
----
+**API Keys & Tokens:**
+```
+BITLY_API_TOKEN=your_bitly_token
+OPENAI_API_KEY=your_openai_api_key
+TWITTER_CONSUMER_KEY=your_twitter_consumer_key
+TWITTER_CONSUMER_SECRET=your_twitter_consumer_secret
+TWITTER_ACCESS_TOKEN=your_twitter_access_token
+TWITTER_ACCESS_TOKEN_SECRET=your_twitter_access_token_secret
+FACEBOOK_PAGE_ID=your_facebook_page_id
+FACEBOOK_PAGE_ACCESS_TOKEN=your_facebook_page_access_token
+PINTEREST_ACCESS_TOKEN=your_pinterest_access_token
+PINTEREST_BOARD_ID=your_pinterest_board_id
+```
 
-## 5. Build & Run
+**Affiliate & App Configuration:**
+```
+AMAZON_AFFILIATE_TAG=youraffiliatename-20
+APP_BASE_URL=https://your-app-name.onrender.com
+RESEARCH_URL=https://www.amazon.com/bestsellers
+```
 
-1.  **Build the Application:**
-    Open a terminal in the project's root directory (`affiliate-agent`) and run the following Maven command:
+**Scheduling (Optional - can use defaults):**
+```
+RESEARCH_CRON=0 0 3 * * ?
+MARKETING_CRON=0 */15 * * * ?
+POSTING_CRON=0 * * * * ?
+STAGGER_MINUTES=120
+POSTING_WINDOW_START=9
+POSTING_WINDOW_END=17
+RECURRING_ENABLED=true
+RECURRING_CRON=0 0 4 * * ?
+REPOST_DAYS=30
+MIN_CLICKS=10
+```
+
+### 5.2. Deploying to Render
+
+1.  Create a new **"Web Service"** on Render and connect it to your GitHub repository.
+2.  Set the **Runtime** to **"Docker"**.
+3.  Go to the **"Environment"** tab and add all the environment variables listed above with your actual secret values.
+4.  Render will automatically build the `Dockerfile` and deploy your application.
+5.  Your agent will be live and fully secured at the URL Render provides.
+
+### 5.3. Running Locally with Docker
+
+For local testing, you can use the `application.properties` file.
+
+1.  **Fill out `application.properties`:** Add your credentials to the `application.properties` file as default values (e.g., `BITLY_API_TOKEN:your_token`).
+2.  **Run Docker Compose:**
     ```sh
-    mvn clean install
+    docker-compose up --build
     ```
-    This will compile the code and package it into a JAR file in the `/target` directory.
-
-2.  **Run the Application:**
-    Once the build is successful, run the application with the following command:
-    ```sh
-    java -jar target/affiliate-agent-0.0.1-SNAPSHOT.jar
-    ```
-    The application will start, and the server will be running on port `8085`.
+3.  **Access the UI:** Navigate to `http://localhost:8085`. You will be prompted for the username and password you set in the properties file.
 
 ---
 
-## 6. How It Works
+## 6. How It Works & Database
 
-- **Web UI:** You can access the user interface by navigating to `http://localhost:8085` in your web browser.
-- **Automated Schedulers:** The application has three core schedulers that run automatically:
-    - `ResearchScheduler`: Runs every hour to find new products.
-    - `MarketingScheduler`: Runs every 5 minutes to process new research and create marketing content.
-    - `PostingScheduler`: Runs every 60 seconds to publish scheduled posts to all configured social media platforms.
-
----
-
-## 7. Database
-
-The application uses a file-based H2 database to ensure all data persists between restarts. The database file is created automatically and is located at `[PROJECT_ROOT]/data/affiliateagentdb.mv.db`.
+(These sections remain the same)

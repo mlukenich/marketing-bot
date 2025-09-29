@@ -1,21 +1,21 @@
 package com.marketer.affiliate_agent.service;
 
+import com.marketer.affiliate_agent.service.network.AffiliateNetwork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.List;
 
 @Service
 public class AffiliateTransformationService {
 
     private static final Logger log = LoggerFactory.getLogger(AffiliateTransformationService.class);
-    private final String amazonTag;
+    private final List<AffiliateNetwork> affiliateNetworks;
 
-    public AffiliateTransformationService(@Value("${affiliate.amazon.tag}") String amazonTag) {
-        this.amazonTag = amazonTag;
+    public AffiliateTransformationService(List<AffiliateNetwork> affiliateNetworks) {
+        this.affiliateNetworks = affiliateNetworks;
+        log.info("Loaded {} affiliate network implementations.", affiliateNetworks.size());
     }
 
     public String transform(String originalUrl) {
@@ -23,31 +23,16 @@ public class AffiliateTransformationService {
             return originalUrl;
         }
 
-        if (originalUrl.contains("amazon.com")) {
-            return addAmazonTag(originalUrl);
-        }
-
-        return originalUrl;
-    }
-
-    private String addAmazonTag(String url) {
-        try {
-            URI oldUri = new URI(url);
-            String newQuery = oldUri.getQuery();
-            String queryParam = "tag=" + amazonTag;
-
-            if (newQuery == null || newQuery.isEmpty()) {
-                newQuery = queryParam;
-            } else {
-                newQuery += "&" + queryParam;
+        // Find the first applicable network and delegate the transformation
+        for (AffiliateNetwork network : affiliateNetworks) {
+            if (network.isApplicable(originalUrl)) {
+                log.debug("Transforming URL with network: {}", network.getClass().getSimpleName());
+                return network.transform(originalUrl);
             }
-
-            URI newUri = new URI(oldUri.getScheme(), oldUri.getAuthority(), oldUri.getPath(), newQuery, oldUri.getFragment());
-            return newUri.toString();
-
-        } catch (URISyntaxException e) {
-            log.error("Failed to parse and transform URL: {}. Returning original URL.", url, e);
-            return url;
         }
+
+        // If no network is applicable, return the original URL
+        log.debug("No applicable affiliate network found for URL: {}", originalUrl);
+        return originalUrl;
     }
 }

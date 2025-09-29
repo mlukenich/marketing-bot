@@ -33,5 +33,7 @@ public class AffiliateLink {
 
     private LocalDateTime scheduledAt;
 
+    private LocalDateTime lastPostedAt;
+
     private long clickCount = 0;
 }

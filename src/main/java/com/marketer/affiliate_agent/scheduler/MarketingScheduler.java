@@ -24,15 +24,21 @@ public class MarketingScheduler {
     private final AffiliateLinkRepository affiliateLinkRepository;
     private final AffiliateLinkService affiliateLinkService;
     private final long staggerMinutes;
+    private final int startHour;
+    private final int endHour;
 
     public MarketingScheduler(ResearchResultRepository researchResultRepository,
                               AffiliateLinkRepository affiliateLinkRepository,
                               AffiliateLinkService affiliateLinkService,
-                              @Value("${scheduler.marketing.stagger-minutes}") long staggerMinutes) {
+                              @Value("${scheduler.marketing.stagger-minutes}") long staggerMinutes,
+                              @Value("${scheduler.posting.window.start-hour}") int startHour,
+                              @Value("${scheduler.posting.window.end-hour}") int endHour) {
         this.researchResultRepository = researchResultRepository;
         this.affiliateLinkRepository = affiliateLinkRepository;
         this.affiliateLinkService = affiliateLinkService;
         this.staggerMinutes = staggerMinutes;
+        this.startHour = startHour;
+        this.endHour = endHour;
     }
 
     @Scheduled(cron = "${scheduler.marketing.cron}")
@@ -44,7 +50,6 @@ public class MarketingScheduler {
         unprocessedResult.ifPresent(result -> {
             log.info("Found unprocessed research result: {}", result.getProductName());
             try {
-                // Calculate the next schedule time to stagger posts
                 LocalDateTime nextScheduleTime = calculateNextScheduleTime();
 
                 affiliateLinkService.createLink(
@@ -65,16 +70,24 @@ public class MarketingScheduler {
     }
 
     private LocalDateTime calculateNextScheduleTime() {
-        // Find the latest scheduled post
         Optional<AffiliateLink> lastScheduledLink = affiliateLinkRepository.findTopByOrderByScheduledAtDesc();
 
-        // If there's a last scheduled post and its time is in the future, schedule after it.
-        // Otherwise, schedule it a few minutes from now.
         LocalDateTime baseTime = lastScheduledLink
                 .map(AffiliateLink::getScheduledAt)
                 .filter(time -> time.isAfter(LocalDateTime.now()))
                 .orElse(LocalDateTime.now());
 
-        return baseTime.plusMinutes(staggerMinutes);
+        LocalDateTime nextPotentialTime = baseTime.plusMinutes(staggerMinutes);
+
+        // Adjust for the posting window
+        if (nextPotentialTime.getHour() < startHour) {
+            // If it's too early, schedule it for the start of the window on the same day
+            return nextPotentialTime.withHour(startHour).withMinute(0).withSecond(0);
+        } else if (nextPotentialTime.getHour() >= endHour) {
+            // If it's too late, schedule it for the start of the window on the next day
+            return nextPotentialTime.plusDays(1).withHour(startHour).withMinute(0).withSecond(0);
+        }
+
+        return nextPotentialTime;
     }
 }

@@ -2,6 +2,7 @@ package com.marketer.affiliate_agent.scheduler;
 
 import com.marketer.affiliate_agent.entity.AffiliateLink;
 import com.marketer.affiliate_agent.entity.GeneratedContent;
+import com.marketer.affiliate_agent.repository.AffiliateLinkRepository;
 import com.marketer.affiliate_agent.repository.GeneratedContentRepository;
 import com.marketer.affiliate_agent.service.SocialMediaService;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -28,6 +30,9 @@ class PostingSchedulerTest {
     private GeneratedContentRepository generatedContentRepository;
 
     @Mock
+    private AffiliateLinkRepository affiliateLinkRepository;
+
+    @Mock
     private SocialMediaService socialMediaService1;
 
     @Mock
@@ -37,8 +42,8 @@ class PostingSchedulerTest {
 
     @BeforeEach
     void setUp() {
-        // Manually construct the scheduler with the correct dependencies
-        postingScheduler = new PostingScheduler(generatedContentRepository, List.of(socialMediaService1, socialMediaService2));
+        // Manually construct the scheduler with all correct dependencies
+        postingScheduler = new PostingScheduler(generatedContentRepository, affiliateLinkRepository, List.of(socialMediaService1, socialMediaService2));
         // Manually set the baseUrl property for testing
         ReflectionTestUtils.setField(postingScheduler, "baseUrl", "http://localhost:8085");
     }
@@ -71,6 +76,11 @@ class PostingSchedulerTest {
         ArgumentCaptor<GeneratedContent> contentCaptor = ArgumentCaptor.forClass(GeneratedContent.class);
         verify(generatedContentRepository).save(contentCaptor.capture());
         assertTrue(contentCaptor.getValue().isPosted());
+
+        // Verify that the parent link's lastPostedAt was updated
+        ArgumentCaptor<AffiliateLink> linkCaptor = ArgumentCaptor.forClass(AffiliateLink.class);
+        verify(affiliateLinkRepository).save(linkCaptor.capture());
+        assertNotNull(linkCaptor.getValue().getLastPostedAt());
     }
 
     @Test
@@ -87,5 +97,6 @@ class PostingSchedulerTest {
         verify(socialMediaService1, never()).post(any(), any());
         verify(socialMediaService2, never()).post(any(), any());
         verify(generatedContentRepository, never()).save(any());
+        verify(affiliateLinkRepository, never()).save(any());
     }
 }

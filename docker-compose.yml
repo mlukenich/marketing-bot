@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  affiliate-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8085"
+    volumes:
+      - agent-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  agent-data:

@@ -36,8 +36,8 @@ class MarketingSchedulerTest {
 
     @BeforeEach
     void setUp() {
-        // Manually construct the scheduler, providing a dummy value for staggerMinutes
-        marketingScheduler = new MarketingScheduler(researchResultRepository, affiliateLinkRepository, affiliateLinkService, 120L);
+        // Manually construct the scheduler, providing dummy values for all constructor arguments
+        marketingScheduler = new MarketingScheduler(researchResultRepository, affiliateLinkRepository, affiliateLinkService, 120L, 9, 17);
     }
 
     @Test
