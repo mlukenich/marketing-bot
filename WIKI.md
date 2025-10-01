@@ -37,10 +37,13 @@ Before running the application, you must create accounts with the following serv
   - **How to get credentials:**
     1. Apply for a free developer account at https://developer.twitter.com/.
     2. Create a new **Project** and a new **App** within it.
-    3. Your **API Key** is the `TWITTER_CONSUMER_KEY` and the **API Secret Key** is the `TWITTER_CONSUMER_SECRET`.
-    4. In your App's settings, find **User authentication settings**.
-    5. Set up **OAuth 1.0a** and set the **App permissions** to **"Read and Write"**.
-    6. Go to the **"Keys and Tokens"** tab and **Generate** an **Access Token and Secret**. These are your `TWITTER_ACCESS_TOKEN` and `TWITTER_ACCESS_TOKEN_SECRET`.
+    3. In your App's settings, find **User authentication settings** and click "Set up".
+    4. Enable **OAuth 1.0a** and set the **App permissions** to **"Read and Write"**. This is required for the agent to post tweets.
+    5. Go to the **"Keys and Tokens"** tab for your App.
+       - The **API Key** shown here is your `TWITTER_CONSUMER_KEY`.
+       - The **API Secret Key** is your `TWITTER_CONSUMER_SECRET`.
+       - In the **Access Token and Secret** section, click **Generate**. These are your `TWITTER_ACCESS_TOKEN` and `TWITTER_ACCESS_TOKEN_SECRET`.
+    6. **Note:** You can ignore the `Client ID` and `Client Secret`. Those are for OAuth 2.0, which this application does not use.
 - **Facebook:** For posting to a Page (`Page ID`, `Page Access Token` with `pages_manage_posts` permission).
 - **Pinterest:** For creating Pins on a Board (`Access Token` with `pins:write` and `boards:write` scopes, `Board ID`).
   - **How to get an Access Token:**
