@@ -33,9 +33,24 @@ Before running the application, you must create accounts with the following serv
 
 - **Bitly:** For shortening URLs (`API Token`).
 - **OpenAI:** For generating content (`API Key`).
-- **Twitter:** For posting tweets (`Consumer Key`, `Consumer Secret`, `Access Token`, `Access Token Secret`).
+- **Twitter/X:** For posting tweets (`Consumer Key`, `Consumer Secret`, `Access Token`, `Access Token Secret`).
+  - **How to get credentials:**
+    1. Apply for a free developer account at https://developer.twitter.com/.
+    2. Create a new **Project** and a new **App** within it.
+    3. Your **API Key** is the `TWITTER_CONSUMER_KEY` and the **API Secret Key** is the `TWITTER_CONSUMER_SECRET`.
+    4. In your App's settings, find **User authentication settings**.
+    5. Set up **OAuth 1.0a** and set the **App permissions** to **"Read and Write"**.
+    6. Go to the **"Keys and Tokens"** tab and **Generate** an **Access Token and Secret**. These are your `TWITTER_ACCESS_TOKEN` and `TWITTER_ACCESS_TOKEN_SECRET`.
 - **Facebook:** For posting to a Page (`Page ID`, `Page Access Token` with `pages_manage_posts` permission).
 - **Pinterest:** For creating Pins on a Board (`Access Token` with `pins:write` and `boards:write` scopes, `Board ID`).
+  - **How to get an Access Token:**
+    1. Go to https://developers.pinterest.com/ and create a new app.
+    2. Under your app's "Permissions" section, request the `pins:write` and `boards:write` scopes.
+    3. On your app's dashboard, generate a new **Access Token**. This is the value for `PINTEREST_ACCESS_TOKEN`.
+  - **How to get a Board ID:**
+    1. Go to your Pinterest profile and click on the board you want to use.
+    2. Look at the URL in your browser. It will be in the format `https://www.pinterest.com/YOUR_USERNAME/YOUR_BOARD_NAME/`.
+    3. Your Board ID is the `YOUR_USERNAME/YOUR_BOARD_NAME` part. This is the value for `PINTEREST_BOARD_ID`.
 
 ---
 
