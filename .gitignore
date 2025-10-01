@@ -7,6 +7,9 @@ target/
 # Log files
 *.log
 
+# Environment variables
+.env
+
 # IDE files
 .apt_generated
 .classpath
